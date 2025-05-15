@@ -1,5 +1,8 @@
+# logger/schema.py
+
 import graphene
 from graphene.types.generic import GenericScalar
+from bson.json_util import dumps
 from .mongo import logs_collection
 
 class LogEntryType(graphene.ObjectType):
