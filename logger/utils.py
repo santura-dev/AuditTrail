@@ -5,8 +5,10 @@ import json
 import hmac
 import hashlib
 from django.conf import settings
+from .tasks import create_log_task
 
-def create_log(action, user_id=None, details=None):
+ 
+def create_log_sync(action, user_id=None, details=None):
     log_entry = {
         "_id": str(uuid.uuid4()),
         "timestamp": datetime.now(timezone.utc),
