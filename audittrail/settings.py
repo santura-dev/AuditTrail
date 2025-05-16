@@ -1,6 +1,8 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
+
 
 load_dotenv()  
 
@@ -34,18 +36,38 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.UserRateThrottle',
-        'rest_framework.throttling.AnonRateThrottle',
+        'logger.throttles.RedisUserRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'user': '100/minute',
-        'anon': '20/minute',
+        'user': '100/hour',
     }
 }
 
 GRAPHENE = {
     "SCHEMA": "logger.schema.schema"
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://localhost:6379/1', 
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
 }
 
 MIDDLEWARE = [

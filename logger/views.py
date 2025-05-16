@@ -7,28 +7,33 @@ from bson.json_util import dumps
 from .metrics import log_created_counter, log_listed_counter
 from .tasks import create_log_task
 from .utils import verify_log_signature
-from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 import json
-
+from rest_framework.permissions import IsAuthenticated
+from .throttles import RedisUserRateThrottle  
+from rest_framework.permissions import IsAuthenticated
 
 class LogCreateView(APIView):
-    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [RedisUserRateThrottle]  
 
     def post(self, request, *args, **kwargs):
         log_created_counter.inc()
+        user = request.user
         data = request.data
+
         action = data.get("action")
-        user_id = data.get("user_id")
         details = data.get("details", {})
 
         if not action:
             return Response({"error": "Action is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        create_log_task.delay(action=action, user_id=user_id, details=details)
+        create_log_task.delay(action=action, user_id=str(user.id), details=details)
         return Response({"message": "Log created"}, status=status.HTTP_201_CREATED)
 
+
 class LogListView(APIView):
-    throttle_classes = [UserRateThrottle, AnonRateThrottle]
+    throttle_classes = [RedisUserRateThrottle]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         log_listed_counter.inc()
@@ -38,7 +43,5 @@ class LogListView(APIView):
         for log in logs:
             if verify_log_signature(log):
                 valid_logs.append(log)
-            else:
-                pass
 
         return Response(json.loads(dumps(valid_logs)), status=status.HTTP_200_OK)
