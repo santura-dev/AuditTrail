@@ -4,10 +4,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from .mongo import logs_collection
 from bson.json_util import dumps
-import json
 from .metrics import log_created_counter, log_listed_counter
 from .tasks import create_log_task
+from .utils import verify_log_signature
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+import json
 
 
 class LogCreateView(APIView):
@@ -32,4 +33,12 @@ class LogListView(APIView):
     def get(self, request, *args, **kwargs):
         log_listed_counter.inc()
         logs = list(logs_collection.find().sort("timestamp", -1).limit(100))
-        return Response(json.loads(dumps(logs)), status=status.HTTP_200_OK)
+
+        valid_logs = []
+        for log in logs:
+            if verify_log_signature(log):
+                valid_logs.append(log)
+            else:
+                pass
+
+        return Response(json.loads(dumps(valid_logs)), status=status.HTTP_200_OK)
