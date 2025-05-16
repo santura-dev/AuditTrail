@@ -11,6 +11,8 @@ import json
 from rest_framework.permissions import IsAuthenticated
 from .throttles import RedisUserRateThrottle  
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
+from django.utils.dateparse import parse_datetime
 
 class LogCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -31,17 +33,51 @@ class LogCreateView(APIView):
         return Response({"message": "Log created"}, status=status.HTTP_201_CREATED)
 
 
+class LogPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class LogListView(APIView):
     throttle_classes = [RedisUserRateThrottle]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         log_listed_counter.inc()
-        logs = list(logs_collection.find().sort("timestamp", -1).limit(100))
 
-        valid_logs = []
-        for log in logs:
-            if verify_log_signature(log):
-                valid_logs.append(log)
+        # Filters
+        user_id = request.query_params.get("user_id")
+        action = request.query_params.get("action")
+        start_time = request.query_params.get("start_time") 
+        end_time = request.query_params.get("end_time")      
 
-        return Response(json.loads(dumps(valid_logs)), status=status.HTTP_200_OK)
+        query = {}
+
+        if user_id:
+            query["user_id"] = user_id
+        if action:
+            query["action"] = action
+        if start_time:
+            start_dt = parse_datetime(start_time)
+            if start_dt:
+                query["timestamp"] = query.get("timestamp", {})
+                query["timestamp"]["$gte"] = start_dt
+        if end_time:
+            end_dt = parse_datetime(end_time)
+            if end_dt:
+                query["timestamp"] = query.get("timestamp", {})
+                query["timestamp"]["$lte"] = end_dt
+
+        # Fetch filtered logs sorted descending by timestamp
+        logs_cursor = logs_collection.find(query).sort("timestamp", -1)
+
+        # Filter out unsigned logs
+        filtered_logs = [log for log in logs_cursor if verify_log_signature(log)]
+
+        # Pagination
+        paginator = LogPagination()
+        page = paginator.paginate_queryset(filtered_logs, request)
+        serialized_page = json.loads(dumps(page))
+
+        return paginator.get_paginated_response(serialized_page)
