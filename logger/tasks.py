@@ -1,5 +1,5 @@
 from celery import shared_task
-from .utils import create_log_sync 
+from logger.utils import create_log_sync 
 
 @shared_task
 def create_log_task(action, user_id=None, details=None):

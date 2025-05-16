@@ -1,14 +1,18 @@
 from pymongo import MongoClient
 from django.conf import settings
 import logging
+import sys
 
 MONGO_URI = getattr(settings, "MONGO_URI", "mongodb://localhost:27017")
 
 try:
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
-    client.server_info()  # Force connection on init
+    client.server_info()  
     db = client.audittrail_db
     logs_collection = db.audit_logs
+
+    if logs_collection is None:
+        raise Exception("logs_collection is None after DB connection.")
 except Exception as e:
     logging.error(f"[MongoDB] Connection failed: {e}")
-    logs_collection = None
+    sys.exit(1) 

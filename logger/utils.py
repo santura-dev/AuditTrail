@@ -5,7 +5,6 @@ import json
 import hmac
 import hashlib
 from django.conf import settings
-from .tasks import create_log_task
 
  
 def create_log_sync(action, user_id=None, details=None):
@@ -18,7 +17,7 @@ def create_log_sync(action, user_id=None, details=None):
     }
 
     signing_key = settings.LOG_SIGNING_KEY.encode()
-    message = json.dumps(log_entry, sort_keys=True).encode()
+    message = json.dumps(log_entry, sort_keys=True, default=str).encode()
     signature = hmac.new(signing_key, message, hashlib.sha256).hexdigest()
     log_entry["signature"] = signature
 
