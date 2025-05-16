@@ -40,7 +40,7 @@ class CreateLog(graphene.Mutation):
 
 class VerifyLogSignature(graphene.Mutation):
     class Arguments:
-        log_entry = GenericScalar(required=True)  # accept the entire log as input
+        log_entry = GenericScalar(required=True)  
 
     is_valid = graphene.Boolean()
 

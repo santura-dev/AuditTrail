@@ -8,6 +8,9 @@ from django.conf import settings
 
  
 def create_log_sync(action, user_id=None, details=None):
+    """
+    Create and insert a signed log entry synchronously into MongoDB.
+    """
     log_entry = {
         "_id": str(uuid.uuid4()),
         "timestamp": datetime.now(timezone.utc),
@@ -22,8 +25,12 @@ def create_log_sync(action, user_id=None, details=None):
     log_entry["signature"] = signature
 
     logs_collection.insert_one(log_entry)
+    return log_entry 
 
 def verify_log_signature(log_entry):
+    """
+    Verify the HMAC signature of a log entry.
+    """
     original_signature = log_entry.get("signature")
     if not original_signature:
         return False
