@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'logger',
     'graphene_django',
     'rest_framework',
+    'drf_spectacular',
 ]
 
 REST_FRAMEWORK = {
@@ -47,7 +48,15 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'user': '100/hour',
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema', 
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Audit Trail API',
+    'DESCRIPTION': 'A secure, scalable audit trail system for logging user actions with cryptographic signatures.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': True,
 }
 
 GRAPHENE = {
