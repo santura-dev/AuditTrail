@@ -70,6 +70,13 @@ CACHES = {
     }
 }
 
+CELERY_BEAT_SCHEDULE = {
+    "flush-log-buffer-every-10-seconds": {
+        "task": "logger.tasks.flush_log_buffer",
+        "schedule": 10.0, 
+    },
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
