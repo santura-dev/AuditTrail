@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING, DESCENDING
 from django.conf import settings
 import logging
 import sys
@@ -13,6 +13,12 @@ try:
 
     if logs_collection is None:
         raise Exception("logs_collection is None after DB connection.")
+
+    # Create compound indexes for common query patterns
+    logs_collection.create_index([("user_id", ASCENDING), ("timestamp", DESCENDING)])
+    logs_collection.create_index([("action", ASCENDING), ("timestamp", DESCENDING)])
+    logs_collection.create_index([("timestamp", DESCENDING)]) 
+
 except Exception as e:
     logging.error(f"[MongoDB] Connection failed: {e}")
-    sys.exit(1) 
+    sys.exit(1)

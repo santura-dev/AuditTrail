@@ -1,4 +1,3 @@
-# views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -10,7 +9,6 @@ from .utils import verify_log_signature
 import json
 from rest_framework.permissions import IsAuthenticated
 from .throttles import RedisUserRateThrottle  
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django.utils.dateparse import parse_datetime
 
@@ -49,6 +47,9 @@ class LogListView(APIView):
         # Filters
         user_id = request.query_params.get("user_id")
         action = request.query_params.get("action")
+        action_contains = request.query_params.get("action__contains")
+        action_in = request.query_params.get("action__in")
+        action_nin = request.query_params.get("action__nin")
         start_time = request.query_params.get("start_time") 
         end_time = request.query_params.get("end_time")      
 
@@ -58,6 +59,14 @@ class LogListView(APIView):
             query["user_id"] = user_id
         if action:
             query["action"] = action
+        if action_contains:
+            query["action"] = {"$regex": action_contains, "$options": "i"} 
+        if action_in:
+            actions = action_in.split(",")  # e.g., "login,logout"
+            query["action"] = {"$in": actions}
+        if action_nin:
+            actions = action_nin.split(",")  # e.g., "login,logout"
+            query["action"] = {"$nin": actions}
         if start_time:
             start_dt = parse_datetime(start_time)
             if start_dt:
