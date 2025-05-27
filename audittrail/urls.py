@@ -13,8 +13,8 @@ def metrics_view(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('logger.urls')),
-    path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
+    path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
     path('metrics/', metrics_view),
-    path("schema/", SpectacularAPIView.as_view(), name="schema"), 
-    path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"), 
-]
+    path('schema/', SpectacularAPIView.as_view(), name="schema"), 
+    path('docs/', SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"), 
+] 

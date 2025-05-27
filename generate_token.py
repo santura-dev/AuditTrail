@@ -85,7 +85,7 @@ if __name__ == "__main__":
         print("Error: Please provide either --user-id, --username, or --create-if-missing.")
         sys.exit(1)
 
-    token, exp_datetime = generate_token(user_id=args.user_id, username=args.username, create_if_missing=args.create_if-missing)
+    token, exp_datetime = generate_token(user_id=args.user_id, username=args.username, create_if_missing=args.create_if_missing)
     if token:
         print(f"Generated JWT Token: {token}")
         print(f"Expires at (CEST): {exp_datetime.strftime('%Y-%m-%d %H:%M:%S %Z')}")

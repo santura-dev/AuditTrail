@@ -5,3 +5,7 @@ __pycache__
 db.sqlite3
 README.md
 audittrail_sdk.py
+logs_export.csv
+.DS_store
+dump.rdb
+generate_token.py

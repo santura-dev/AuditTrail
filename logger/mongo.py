@@ -3,22 +3,40 @@ from django.conf import settings
 import logging
 import sys
 
-MONGO_URI = getattr(settings, "MONGO_URI", "mongodb://localhost:27017")
+# Lazy initialization variables
+_client = None
+_db = None
 
-try:
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
-    client.server_info()  
-    db = client.audittrail_db
-    logs_collection = db.audit_logs
+def get_mongo_collection(collection_name):
+    """
+    Get a MongoDB collection by name from the audittrail_db database.
+    Lazily initializes the connection if not already established.
+    """
+    global _client, _db
+    if _client is None or _db is None:
+        try:
+            MONGO_URI = getattr(settings, "MONGO_URI", "mongodb://localhost:27017")
+            _client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=2000)
+            _client.server_info()  # Test connection
+            _db = _client.audittrail_db
 
-    if logs_collection is None:
-        raise Exception("logs_collection is None after DB connection.")
+            # Create compound indexes for common query patterns on audit_logs
+            audit_logs = _db.audit_logs
+            audit_logs.create_index([("user_id", ASCENDING), ("timestamp", DESCENDING)])
+            audit_logs.create_index([("action", ASCENDING), ("timestamp", DESCENDING)])
+            audit_logs.create_index([("timestamp", DESCENDING)])
+        except Exception as e:
+            logging.error(f"[MongoDB] Connection failed: {e}")
+            sys.exit(1)
 
-    # Create compound indexes for common query patterns
-    logs_collection.create_index([("user_id", ASCENDING), ("timestamp", DESCENDING)])
-    logs_collection.create_index([("action", ASCENDING), ("timestamp", DESCENDING)])
-    logs_collection.create_index([("timestamp", DESCENDING)]) 
+    collection = _db[collection_name]
+    if collection is None:
+        raise Exception(f"Collection {collection_name} is None after DB connection.")
+    return collection
 
-except Exception as e:
-    logging.error(f"[MongoDB] Connection failed: {e}")
-    sys.exit(1)
+# Backward compatibility for existing code
+def get_logs_collection():
+    """Get the audit_logs collection (legacy function)."""
+    return get_mongo_collection('audit_logs')
+
+logs_collection = get_logs_collection()

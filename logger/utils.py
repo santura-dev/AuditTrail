@@ -7,11 +7,12 @@ import hashlib
 from django.conf import settings
 import os
 
-def create_log_sync(action, user_id=None, details=None):
+def create_log_sync(action, user_id=None, details=None, timestamp=None):
     """
     Create and insert a signed log entry synchronously into MongoDB.
     """
-    timestamp = datetime.now(timezone.utc).replace(microsecond=0)
+    # Use provided timestamp or default to current time
+    timestamp = timestamp if timestamp else datetime.now(timezone.utc).replace(microsecond=0)
     log_entry = {
         "_id": str(uuid.uuid4()),
         "timestamp": timestamp,

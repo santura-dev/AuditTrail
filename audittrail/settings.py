@@ -19,6 +19,7 @@ LOG_SIGNING_KEY = os.getenv("LOG_SIGNING_KEY")
 if not LOG_SIGNING_KEY:
     raise ValueError("LOG_SIGNING_KEY must be set in environment variables for security.")
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 
@@ -86,6 +87,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "logger.tasks.flush_log_buffer",
         "schedule": 10.0,
     },
+    "archive-logs-every-day": {
+        "task": "logger.tasks.archive_logs_task",
+        "schedule": 86400.0,  # 24 hours
+    },
 }
 
 MIDDLEWARE = [
@@ -141,6 +146,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
 # Internationalization
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -149,6 +155,7 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
