@@ -18,17 +18,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the project code
 COPY . .
 
-# Set environment variables
+# Set runtime environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     DJANGO_SETTINGS_MODULE=audittrail.settings \
     CELERY_BROKER_URL=redis://redis:6379/0 \
-    CELERY_RESULT_BACKEND=redis://redis:6379/0 \
-    MONGO_URI=mongodb://mongo:27017/audittrail
-
-# Run migrations and collect static files
-RUN python manage.py migrate --noinput
-RUN python manage.py collectstatic --noinput --clear
+    CELERY_RESULT_BACKEND=redis://redis:6379/0
 
 # Run Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "audittrail.wsgi:application"]

@@ -3,7 +3,7 @@ version: '3.8'
 services:
   app:
     build: .
-    command: bash -c "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:8000 audittrail.wsgi:application"
+    command: bash -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear && gunicorn --bind 0.0.0.0:8000 audittrail.wsgi:application"
     volumes:
       - .:/app
     ports:
@@ -15,7 +15,7 @@ services:
       - DJANGO_SETTINGS_MODULE=audittrail.settings
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - MONGO_URI=mongodb://mongo:27017/audittrail
+      - MONGO_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017/audittrail_db?authSource=admin
       - LOG_SIGNING_KEY=${LOG_SIGNING_KEY}
     networks:
       - audittrail_net
@@ -32,7 +32,8 @@ services:
       - DJANGO_SETTINGS_MODULE=audittrail.settings
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - MONGO_URI=mongodb://mongo:27017/audittrail
+      - MONGO_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017/audittrail_db?authSource=admin
+      - LOG_SIGNING_KEY=${LOG_SIGNING_KEY}
     networks:
       - audittrail_net
 
@@ -48,7 +49,8 @@ services:
       - DJANGO_SETTINGS_MODULE=audittrail.settings
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - MONGO_URI=mongodb://mongo:27017/audittrail
+      - MONGO_URI=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017/audittrail_db?authSource=admin
+      - LOG_SIGNING_KEY=${LOG_SIGNING_KEY}
     networks:
       - audittrail_net
 
@@ -56,6 +58,10 @@ services:
     image: mongo:latest
     ports:
       - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=audittrail_db
     volumes:
       - mongo_data:/data/db
     networks:

@@ -8,10 +8,11 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
     env:
       LOG_SIGNING_KEY: ${{ secrets.LOG_SIGNING_KEY }}
-
+      MONGO_USERNAME: ${{ secrets.MONGO_USERNAME }}
+      MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+      DOCKER_BUILDKIT: 1
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -26,8 +27,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Start MongoDB and Redis with Docker Compose
+        run: |
+          docker-compose up -d mongo redis
+          # Wait for services to be ready
+          sleep 10
+
       - name: Run tests
         run: |
+          export MONGO_URI="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@localhost:27017/audittrail_db?authSource=admin"
+          export CELERY_BROKER_URL="redis://localhost:6379/0"
+          export CELERY_RESULT_BACKEND="redis://localhost:6379/0"
+          export LOG_SIGNING_KEY=${LOG_SIGNING_KEY}
           TEST_DEBUG=True python manage.py test logger.tests
 
       - name: Build and push Docker images
@@ -43,7 +60,5 @@ jobs:
             docker service rm audittrail_app || true
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/audittrail-app:latest
             docker stack deploy -c docker-compose.yml audittrail
+            # Run migrations in the deployed service (already handled in app service startup)
           "
-
-    env:
-      DOCKER_BUILDKIT: 1
