@@ -8,6 +8,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    
+    env:
+      LOG_SIGNING_KEY: ${{ secrets.LOG_SIGNING_KEY }}
 
     steps:
       - name: Checkout code
