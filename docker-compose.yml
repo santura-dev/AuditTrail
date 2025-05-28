@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    command: bash -c "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:8000 audittrail.wsgi:application"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=audittrail.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - MONGO_URI=mongodb://mongo:27017/audittrail
+    networks:
+      - audittrail_net
+
+  celery_worker:
+    build: .
+    command: celery -A audittrail worker --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - app
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=audittrail.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - MONGO_URI=mongodb://mongo:27017/audittrail
+    networks:
+      - audittrail_net
+
+  celery_beat:
+    build: .
+    command: celery -A audittrail beat --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - app
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=audittrail.settings
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - MONGO_URI=mongodb://mongo:27017/audittrail
+    networks:
+      - audittrail_net
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - audittrail_net
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - audittrail_net
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - audittrail_net
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  audittrail_net:
+    driver: bridge
