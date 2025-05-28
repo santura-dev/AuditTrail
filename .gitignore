@@ -3,7 +3,6 @@ __pycache__
 *.env
 *.log
 db.sqlite3
-README.md
 audittrail_sdk.py
 logs_export.csv
 .DS_store
